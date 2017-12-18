@@ -1,0 +1,24 @@
+*.iml
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+/.idea/modules.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+
+#--------------------
+# mine
+#--------------------
+*.*#*
+*.bak*
+*.apk
+
+# Visual Paradigm temp-files
+*.vpp.lck
+*.vux
+#--------------------
+# ~mine
+#--------------------
