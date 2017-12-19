@@ -5,39 +5,42 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.gdetotut.jundo.UndoManager;
 import com.gdetotut.jundo.UndoStack;
+import com.gdetotut.jundo.UndoWatcher;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 import static java.lang.Math.pow;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements UndoWatcher {
 
     static final String TAG = "MainActivity";
-//    UndoManager undoManager;
+    static final String UM_KEY = "undo_manager";
     UndoStack undoStack;
 
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        Log.d(TAG, "onRestoreInstanceState: " + savedInstanceState);
-    }
+    Button undoBtn;
+    Button redoBtn;
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        Log.d(TAG, "onSaveInstanceState: " + outState);
-        UndoManager undoManager = new UndoManager("um", 1, undoStack);
+//        undoStack.setSubscriber(null);
+        UndoManager undoManager = new UndoManager(UM_KEY, 1, undoStack);
+        Log.d(TAG, "onSaveInstanceState: " + undoManager);
         try {
             String s  = UndoManager.serialize(undoManager, false);
             Log.d(TAG, "saved s = " + s);
-            outState.putSerializable("um", undoManager);
+            outState.putString(UM_KEY, s);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, e.getLocalizedMessage());
         }
         super.onSaveInstanceState(outState);
     }
@@ -47,27 +50,68 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        undoBtn = findViewById(R.id.undo_btn);
+        redoBtn = findViewById(R.id.redo_btn);
+        RadioButton rbMonth = findViewById(R.id.radioMonthly);
+        RadioButton rbYear = findViewById(R.id.radioYearly);
+
         if(null != savedInstanceState) {
-            String s = savedInstanceState.getSerializable("UndoManager").toString();
+            String s = savedInstanceState.getString(UM_KEY);
             Log.d(TAG, "restored s = " + s);
-            if(!s.isEmpty()) {
+            if(s != null && !s.isEmpty()) {
                 try {
-                    UndoManager undoManager = UndoManager.deserialize(s);
+                    UndoManager undoManager = UndoManager.deserialize(s, this);
                     undoStack = undoManager.getStack();
+                    undoStack.setWatcher(this);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, e.getLocalizedMessage());
                 } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, e.getLocalizedMessage());
                 }
             }
         }else {
             undoStack = new UndoStack("Stack", null);
+            undoStack.setWatcher(this);
         }
+
+        rbMonth.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                undoStack.push(new MainUndo.RadioCheckCmd("Do monthly",
+                        R.id.radioMonthly, R.id.radioYearly, null));
+                setUndoState();
+            }
+        });
+        rbYear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                undoStack.push(new MainUndo.RadioCheckCmd("Do yearly",
+                        R.id.radioYearly, R.id.radioMonthly, null));
+                setUndoState();
+            }
+        });
+
+        undoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                undoStack.undo();
+                setUndoState();
+            }
+        });
+        redoBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                undoStack.redo();
+                setUndoState();
+            }
+        });
+
+        setUndoState();
 
     }
 
     //For Button presses (linked via onClick attribute)
-    public void HandleClick(View arg0) {
+    public void handleClick(View arg0) {
         double inputRate = 0.0;
         double convertedRate = 0.0;
         EditText inputText = (EditText)findViewById(R.id.editRate);
@@ -86,5 +130,43 @@ public class MainActivity extends AppCompatActivity {
             convertedRate = (pow((1.0 + inputRate), 12) - 1.0) * 100.0;
         }
         convertedText.setText(String.format("Converted Rate is %1$.4f%%", convertedRate));
+    }
+
+    @Override
+    public void indexChanged(int idx) {
+        Log.d(TAG, "indexChanged " + idx);
+    }
+
+    @Override
+    public void cleanChanged(boolean clean) {
+
+    }
+
+    @Override
+    public void canUndoChanged(boolean canUndo) {
+        Log.d(TAG, "canUndoChanged " + canUndo);
+    }
+
+    @Override
+    public void canRedoChanged(boolean canRedo) {
+        Log.d(TAG, "canRedoChanged " + canRedo);
+    }
+
+    @Override
+    public void undoTextChanged(String undoText) {
+        Log.d(TAG, "undoTextChanged " + undoText);
+        Toast.makeText(this, undoText, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void redoTextChanged(String redoText) {
+        Log.d(TAG, "redoTextChanged " + redoText);
+        Toast.makeText(this, redoText, Toast.LENGTH_SHORT).show();
+    }
+
+    private void setUndoState() {
+        Log.d(TAG, "setUndoState: " + undoStack.canUndo() + ":" + undoStack.canRedo());
+        undoBtn.setEnabled(undoStack.canUndo());
+        redoBtn.setEnabled(undoStack.canRedo());
     }
 }

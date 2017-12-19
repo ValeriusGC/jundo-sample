@@ -79,7 +79,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/button"
-        android:onClick="HandleClick"
+        android:onClick="handleClick"
         android:layout_alignTop="@+id/textView"
         android:layout_toRightOf="@+id/editRate"
         android:layout_toEndOf="@+id/editRate"
@@ -98,5 +98,27 @@
         android:layout_centerVertical="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
+
+    <LinearLayout
+        android:id="@+id/buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/undo_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="undo"/>
+
+        <Button
+            android:id="@+id/redo_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="redo"/>
+
+    </LinearLayout>
+
 
 </RelativeLayout>
