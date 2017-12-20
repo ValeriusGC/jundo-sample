@@ -1,12 +1,10 @@
 package com.gdetotut.samples.jundosample;
 
-import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -15,9 +13,9 @@ import android.widget.Toast;
 import com.gdetotut.jundo.UndoManager;
 import com.gdetotut.jundo.UndoStack;
 import com.gdetotut.jundo.UndoWatcher;
+import com.gdetotut.samples.jundosample.MainActivityUndoController.RadioCheckCmd;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 import static java.lang.Math.pow;
 
@@ -26,7 +24,10 @@ public class MainActivity extends AppCompatActivity implements UndoWatcher {
     static final String TAG = "MainActivity";
     static final String UM_KEY = "undo_manager";
     UndoStack undoStack;
+    MainActivityUndoController undoController;
 
+    RadioButton rbMonth;
+    RadioButton rbYear;
     Button undoBtn;
     Button redoBtn;
 
@@ -52,16 +53,18 @@ public class MainActivity extends AppCompatActivity implements UndoWatcher {
 
         undoBtn = findViewById(R.id.undo_btn);
         redoBtn = findViewById(R.id.redo_btn);
-        RadioButton rbMonth = findViewById(R.id.radioMonthly);
-        RadioButton rbYear = findViewById(R.id.radioYearly);
+        rbMonth = findViewById(R.id.radioMonthly);
+        rbYear = findViewById(R.id.radioYearly);
 
         if(null != savedInstanceState) {
             String s = savedInstanceState.getString(UM_KEY);
             Log.d(TAG, "restored s = " + s);
             if(s != null && !s.isEmpty()) {
                 try {
-                    UndoManager undoManager = UndoManager.deserialize(s, this);
+                    UndoManager undoManager = UndoManager.deserialize(s);
                     undoStack = undoManager.getStack();
+                    undoController = (MainActivityUndoController) undoStack.getSubject();
+                    undoController.activity = this;
                     undoStack.setWatcher(this);
                 } catch (IOException e) {
                     Log.e(TAG, e.getLocalizedMessage());
@@ -70,23 +73,34 @@ public class MainActivity extends AppCompatActivity implements UndoWatcher {
                 }
             }
         }else {
-            undoStack = new UndoStack("Stack", null);
+            undoController = new MainActivityUndoController(this);
+            undoStack = new UndoStack(undoController, null);
             undoStack.setWatcher(this);
         }
 
         rbMonth.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                undoStack.push(new MainUndo.RadioCheckCmd("Do monthly",
-                        R.id.radioMonthly, R.id.radioYearly, null));
+//                undoStack.push(new MainActivityUndoController.RadioCheckCmd("Do monthly",
+//                        R.id.radioMonthly, R.id.radioYearly, null));
+                undoStack.push(new RadioCheckCmd("Do monthly",
+                        undoController,
+                        R.id.radioMonthly,
+                        R.id.radioYearly,
+                        null));
                 setUndoState();
             }
         });
         rbYear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                undoStack.push(new MainUndo.RadioCheckCmd("Do yearly",
-                        R.id.radioYearly, R.id.radioMonthly, null));
+//                undoStack.push(new MainActivityUndoController.RadioCheckCmd("Do yearly",
+//                        R.id.radioYearly, R.id.radioMonthly, null));
+                undoStack.push(new RadioCheckCmd("Do yearly",
+                        undoController,
+                        R.id.radioYearly,
+                        R.id.radioMonthly,
+                        null));
                 setUndoState();
             }
         });

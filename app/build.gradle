@@ -35,6 +35,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 
 
-    compile 'com.gdetotut:jundo-framework:1.5-SNAPSHOT'
+    compile 'com.gdetotut:jundo-framework:1.6-SNAPSHOT'
 
 }
